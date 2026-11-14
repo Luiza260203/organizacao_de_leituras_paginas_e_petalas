@@ -48,28 +48,90 @@ O MVP testa a premissa de que a **recompensa visual** de ver uma barra de progre
 Para gerar a base do projeto no Lovable, utilizamos o seguinte Mega Prompt focado em UI/UX e regras de negócio:
 
 ```markdown
-# Visão Geral do Projeto
+## Visão Geral do Projeto
+
 Construa uma aplicação web responsiva chamada "Páginas & Pétalas", um aplicativo de organização de leitura bonito, artístico e minimalista. O objetivo é fornecer uma experiência sem atritos para os usuários rastrearem o que querem ler, o que estão lendo e o que já leram. Toda a interface, textos, botões e alertas do aplicativo devem ser gerados em Português do Brasil.
 
 ## Stack de Tecnologia e Configuração de Backend
-- Frontend: React, Tailwind CSS, shadcn/ui, Framer Motion.
-- Ícones e Arte: Lucide React para ícones da interface. Use CSS ou padrões sutis de SVG no fundo para os elementos florais.
-- Backend e Cloud: Supabase (Auth com Google OAuth, PostgreSQL com RLS).
-- API Externa: Integração com a Google Books API.
+
+Frontend: React, Tailwind CSS, shadcn/ui, Framer Motion (para barras de progresso animadas e transições de modais suaves).
+
+Ícones e Arte: Lucide React para ícones da interface. Use CSS ou padrões sutis de SVG no fundo para os elementos florais.
+
+## Backend e Cloud (Integração Nativa do Lovable):
+
+Use Supabase para todo o backend.
+
+Configure o Supabase Auth com Google OAuth (Login Social) para um onboarding de 1 clique.
+
+Configure um banco de dados Supabase PostgreSQL com Row Level Security (RLS) para que os usuários só possam ler/escrever seus próprios livros.
+
+API Externa: Integre com a Google Books API para a busca de livros.
 
 ## Design System e UI/UX
-- Tema e Vibe: Artístico, botânico e aconchegante.
-- Paleta de Cores (Tons Pastel): Fundo Creme suave (#FCF9F2), destaques em Verde Sálvia, Rosa Antigo e Lavanda Suave. Texto em Cinza chumbo.
-- Tipografia: Serif elegante para títulos e Sans-Serif limpa para corpo.
-- Detalhes: Sombras suaves, cantos arredondados e acentos florais.
 
-## Funcionalidades Principais
-1. Autenticação: Tela de login e onboarding sem atrito.
-2. Motor de Busca: Barra proeminente conectada à Google Books API.
-3. As 3 Estantes: Quero Ler, Lendo e Lidos.
-4. Rastreamento: Input de páginas atuais calculando porcentagem com barra de progresso animada.
-5. Avaliação: Modal "Livro Concluído" pedindo nota (1 a 5 estrelas) e nota privada (texto).
-6. Dashboard: Mural de conquistas (Livros Lidos, Páginas Lidas).
+Tema e Vibe: Artístico, botânico e aconchegante.
+
+Paleta de Cores (Tons Pastel):
+
+Fundo: Creme suave ou off-white (#FCF9F2).
+
+Destaques: Verde Sálvia (#A3B19B), Rosa Antigo (#D9A5B3), Lavanda Suave (#C8B8D1).
+
+Texto: Cinza chumbo escuro (não usar preto puro) para melhor legibilidade e conforto visual.
+
+Tipografia: Use uma fonte Serif elegante para os títulos (como Playfair Display ou Merriweather) e uma Sans-Serif limpa para os textos em geral.
+
+Detalhes de Estilo: Use sombras muito suaves, cantos bem arredondados (rounded-2xl ou rounded-3xl) e acentos florais sutis no fundo da página ou nas bordas dos cards.
+
+## Funcionalidades Principais (Core Features)
+
+1. Autenticação e Onboarding
+
+Implemente uma tela de login bonita apenas com o botão de "Entrar com Google".
+Onboarding sem atrito: Após o login com sucesso, redirecione o usuário instantaneamente para a página "Início/Busca" para adicionar seu primeiro livro.
+
+2. Motor de Busca de Livros
+
+Crie uma barra de pesquisa proeminente e com design elegante.
+Ao pesquisar, busque os dados na API do Google Books.
+Exiba um grid de resultados mostrando: Capa do Livro, Título, Autor e Total de Páginas.
+Cada card de resultado deve ter um botão rápido ou menu dropdown para adicionar o livro em uma das três estantes: "Quero Ler", "Lendo" ou "Lidos".
+
+3. As 3 Estantes (Schema do Banco de Dados e UI)
+
+Crie uma tabela no Supabase para os livros dos usuários com os campos: id, user_id, google_books_id, title, author, cover_url, total_pages, status (quero_ler, lendo, lidos), pages_read, rating, private_note.
+Quero Ler: Grid simples com as capas e títulos dos livros.
+Lendo: A estante mais interativa (foco no rastreamento).
+Lidos (Histórico): O arquivo de livros concluídos.
+
+4. Rastreamento de Progresso (Core Loop)
+
+Para livros no status "Lendo", exiba uma Barra de Progresso animada e de destaque na página inicial.
+Forneça um input numérico simples onde o usuário digita em qual página está atualmente.
+O aplicativo deve calcular automaticamente a porcentagem (pages_read / total_pages) * 100 e animar instantaneamente o preenchimento da barra de progresso.
+
+5. Avaliação e Notas Privadas
+
+Quando o usuário atualizar o progresso de um livro para o número total de páginas (pages_read = total_pages), dispare automaticamente um modal bonito de "Livro Concluído!".
+Este modal deve pedir ao usuário para:
+Dar uma nota de 1 a 5 estrelas (ícones de estrelas interativos).
+Escrever uma nota privada (opcional) de texto sobre seus sentimentos/resumo do livro.
+Altere automaticamente o status do livro para "Lidos" e salve a nota/avaliação no Supabase.
+
+6. Dashboard do Usuário (Conquistas)
+
+Crie uma seção de resumo do perfil no topo da página inicial exibindo:
+
+Livros Lidos: Contagem total de livros no status "Lidos".
+Páginas Lidas: Soma de total_pages de todos os livros "Lidos" + as pages_read atuais dos livros "Lendo". (Faça esse número parecer uma grande conquista visual).
+Mural: Uma lista com rolagem horizontal ou grid estilo masonry mostrando apenas as capas dos livros que o usuário já terminou.
+Instruções Iniciais de Configuração para o Lovable
+Estruture o layout da interface com uma barra de navegação inferior (bottom nav) para mobile e uma barra lateral (sidebar) para desktop contendo: Busca, Minhas Estantes, Perfil.
+Configure a conexão com o Supabase e o fluxo de Autenticação primeiro.
+Construa o componente de busca da Google Books API.
+Conecte a funcionalidade de adicionar à estante com o banco de dados do Supabase.
+Aplique o design system em tons pastel/floral em todos os componentes desde o início.
 ```
 Seguido por alguns prompts para ajustes:
 > Quando eu busco por título, autor ou ISBN, aparece "Não coseguimos buscar agora. Tente novamente."
